@@ -221,6 +221,7 @@ endif;
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/estilo.css">
   <style>
+  img{width:50%;}
     body { 
       display: flex;
       flex-direction: column;
@@ -241,7 +242,7 @@ endif;
       gap: 15px;
       width: 220px;
     }
-    .buttons button {
+    .buttons button,.logout button {
       padding: 15px;
       border-radius: 8px;
       border: none;
@@ -249,13 +250,15 @@ endif;
       cursor: pointer;
       background: darksalmon;
       color: #fff;
+      width:100%;
     }
     .buttons button:hover {
       filter: brightness(110%);
     }
     .logout {
-      margin-top: 30px;
+      
       text-align: center;
+      width:220px;
     }
     .msg {
       margin: 10px auto;
@@ -266,11 +269,13 @@ endif;
       display: none;
       text-align: center;
       width: 220px;
+          box-sizing: border-box;
     }
   </style>
 </head>
 <body>
-  <h2>¡Hola, <?= htmlspecialchars($_SESSION['user_name'] ?? '') ?>!</h2>
+ <img src="darksalmon.png">
+  <h2>jocarsa | darksalmon</h2>
 
   <div class="buttons">
     <button onclick="registrarEntrada()">Registrar Entrada</button>

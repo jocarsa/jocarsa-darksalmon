@@ -183,12 +183,17 @@ endif;
       <img src="darksalmon.png" alt="Logo">
       jocarsa | darksalmon
     </h1>
-    <div style="display:flex; gap:5px;">
+    <div style="display:flex; gap:2px;">
+      <button class="relieve">A</button>
+      <button class="relieve">A</button>
+      <button class="relieve">A</button>
+      <button class="relieve">A</button>
       <button class="relieve">A</button>
       <button class="relieve">A</button>
       <!-- Logout button -->
-      <button class="relieve" onclick="window.location='?action=logout'">🔒</button>
+      
     </div>
+    <button class="relieve" onclick="window.location='?action=logout'">🔒</button>
   </header>
   <main>
     <nav>

@@ -225,4 +225,15 @@ footer {
 .emoji{
   filter:brightness(10);
 }
+header button{
+	width:30px;
+	height:30px;
+	background-color:white !important;
+}
+header button:first-child{
+	border-radius:5px 0px 0px 5px;
+}
+header button:last-child{
+	border-radius:0px 5px 5px 0px;
+}
 
