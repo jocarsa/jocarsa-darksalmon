@@ -57,6 +57,8 @@ if (!isset($_SESSION['user_id'])):
     <!-- Apple Touch Icon (iOS) -->
     <link rel="apple-touch-icon" sizes="180x180" href="/darksalmon.png">
     <style>
+    @import url('https://static.jocarsa.com/fuentes/ubuntu-font-family-0.83/ubuntu.css');
+
     *{
       font-family: Ubuntu, sans-serif;
     }

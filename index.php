@@ -221,6 +221,8 @@ endif;
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/estilo.css">
   <style>
+  @import url('https://static.jocarsa.com/fuentes/ubuntu-font-family-0.83/ubuntu.css');
+
   img{width:50%;}
     body { 
       display: flex;
