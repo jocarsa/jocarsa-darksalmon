@@ -17,6 +17,7 @@ body {
   background: DarkSalmon;
   font-size: 1em;
   background: linear-gradient(0deg, rgba(124,80,65,1) 0%, rgba(233,150,122,1) 100%);
+  overflow:hidden;
 }
 header, footer {
   color: white;
@@ -67,7 +68,7 @@ main nav {
   width: 200px;
   display: flex; 
   flex-direction: column;
-  justify-content: space-between;
+  
   align-items: stretch;
   transition: all 0.5s ease;
   margin-left: 10px;
@@ -108,27 +109,39 @@ main nav .activo {
   background: DarkSalmon;
   color:white;
 }
-#ocultar {
+#ocultar, #toggleVertical {
   padding: 10px;
   cursor: pointer;
   width:200px;
+  transition: all 0.5s ease;
+}
+#ocultar .icono, #toggleVertical .icono {
+  transition: all 0.5s ease;
 }
 #ocultar .icono {
-  transition: all 0.5s ease;
   transform: rotate(180deg);
+}
+#toggleVertical .icono {
+  /* initial icon rotation for vertical toggle */
+  transform: rotate(0deg);
 }
 /* Section (right content area) */
 section {
-  flex: 1; 
+  flex: 1;
   background: white;
   border-radius: 10px 0 0 10px;
   box-shadow: 0 5px 10px rgba(0,0,0,0.4);
   padding: 20px;
   position: relative;
   z-index:10000;
+  transition: height 0.5s ease;
 }
-section h3 {
-  margin-top: 0;
+/* New class for vertical expansion (only height is changed) */
+section.vertical-full {
+  flex: none;
+    height: calc(100vh - 41px);
+    transform: translate(0px, -65px);
+    width: 100%;
 }
 /* Table styling */
 table {
@@ -190,12 +203,14 @@ table tbody tr:hover {
 #formulario input[type=number],
 #formulario select,
 #formulario input[type=date],
-#formulario input[type=time] {
+#formulario input[type=time],
+table thead input {
   width: 100%;
   padding: 10px;
   margin-bottom: 10px;
   box-sizing:border-box;
   border:1px solid lightgray;
+  border-radius:5px;
 }
 #formulario .btn {
   margin-top: 5px;
@@ -237,5 +252,9 @@ header button:first-child{
 }
 header button:last-child{
 	border-radius:0px 5px 5px 0px;
+}
+hr{
+	border-bottom:1px solid lightsalmon;
+	width:100%;
 }
 

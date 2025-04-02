@@ -49,17 +49,14 @@ if (!isset($_SESSION['user_id'])):
     <meta charset="UTF-8" />
     <title>jocarsa | darksalmon</title>
     <link rel="icon" href="darksalmon.png" type="image/x-icon">
-
     <!-- PNG Favicon for Browsers -->
     <link rel="icon" type="image/png" sizes="32x32" href="darksalmon.png">
     <link rel="icon" type="image/png" sizes="16x16" href="darksalmon.png">
-
     <!-- Apple Touch Icon (iOS) -->
     <link rel="apple-touch-icon" sizes="180x180" href="/darksalmon.png">
     <style>
     @import url('https://static.jocarsa.com/fuentes/ubuntu-font-family-0.83/ubuntu.css');
-
-    *{
+    * {
       font-family: Ubuntu, sans-serif;
     }
     html, body {
@@ -148,10 +145,8 @@ if (!isset($_SESSION['user_id'])):
         <?php endif; ?>
         <label for="username">Usuario:</label>
         <input type="text" name="username" id="username" required>
-
         <label for="password">Contraseña:</label>
         <input type="password" name="password" id="password" required>
-
         <input class="relieve login-btn" type="submit" value="Iniciar sesión">
     </form>
 </body>
@@ -171,19 +166,17 @@ endif;
   <title>jocarsa | darksalmon</title>
   <link rel="stylesheet" href="css/estilo.css">
   <link rel="icon" href="darksalmon.png" type="image/x-icon">
-
-    <!-- PNG Favicon for Browsers -->
-    <link rel="icon" type="image/png" sizes="32x32" href="darksalmon.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="darksalmon.png">
-
-    <!-- Apple Touch Icon (iOS) -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/darksalmon.png">
+  <!-- PNG Favicon for Browsers -->
+  <link rel="icon" type="image/png" sizes="32x32" href="darksalmon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="darksalmon.png">
+  <!-- Apple Touch Icon (iOS) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/darksalmon.png">
 </head>
 <body>
   <header>
     <h1>
       <img src="darksalmon.png" alt="Logo">
-      jocarsa | darksalmon
+      darksalmon
     </h1>
     <div style="display:flex; gap:2px;">
       <button class="relieve">A</button>
@@ -192,16 +185,18 @@ endif;
       <button class="relieve">A</button>
       <button class="relieve">A</button>
       <button class="relieve">A</button>
-      <!-- Logout button -->
-      
     </div>
     <button class="relieve" onclick="window.location='?action=logout'">🔒</button>
   </header>
   <main>
     <nav>
       <div class="enlaces"></div>
+      <hr>
       <div id="ocultar">
         <span class="icono relieve">></span>Ocultar
+      </div>
+      <div id="toggleVertical">
+        <span class="icono relieve">⇕</span>Expandir Vertical
       </div>
     </nav>
     <section>
@@ -226,7 +221,6 @@ endif;
   <footer>
     <p>(c) 2025 jocarsa | darksalmon</p>
   </footer>
-
   <script src="js/codigo.js"></script>
 </body>
 </html>

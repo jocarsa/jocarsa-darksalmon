@@ -34,7 +34,18 @@ function getPDOConnection(): PDO
 function crearTablas(PDO $pdo)
 {
     try {
-        // 1) USUARIOS table
+        // New table: centros_trabajo
+        $pdo->exec("
+            CREATE TABLE IF NOT EXISTS centros_trabajo (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                address TEXT,
+                latitude REAL,
+                longitude REAL
+            );
+        ");
+
+        // USUARIOS table
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +66,7 @@ function crearTablas(PDO $pdo)
             );
         ");
 
-        // Empleados table referencing tipos_contrato
+        // Modified Empleados table: add centro_trabajo_id and radio_accion
         $pdo->exec("
             CREATE TABLE IF NOT EXISTS empleados (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,7 +74,10 @@ function crearTablas(PDO $pdo)
                 apellido TEXT,
                 departamento TEXT,
                 tipo_contrato_id INTEGER,
-                FOREIGN KEY(tipo_contrato_id) REFERENCES tipos_contrato(id) ON DELETE SET NULL
+                centro_trabajo_id INTEGER,
+                radio_accion REAL,
+                FOREIGN KEY(tipo_contrato_id) REFERENCES tipos_contrato(id) ON DELETE SET NULL,
+                FOREIGN KEY(centro_trabajo_id) REFERENCES centros_trabajo(id) ON DELETE SET NULL
             );
         ");
 
@@ -139,19 +153,26 @@ function insertarDatosEjemplo(PDO $pdo)
     // Insert contract types
     $pdo->exec("INSERT INTO tipos_contrato (name) VALUES ('Indefinido'), ('Temporal'), ('Prácticas')");
 
-    // Insert sample employees
+    // Insert a sample centro de trabajo
     $pdo->exec("
-        INSERT INTO empleados (nombre, apellido, departamento, tipo_contrato_id)
+        INSERT INTO centros_trabajo (name, address, latitude, longitude)
+        VALUES ('Central Office', '123 Main St, City', 40.7128, -74.0060)
+    ");
+    $centroId = $pdo->lastInsertId();
+
+    // Insert sample employees with centro de trabajo and radio de acción
+    $pdo->exec("
+        INSERT INTO empleados (nombre, apellido, departamento, tipo_contrato_id, centro_trabajo_id, radio_accion)
         VALUES
-        ('Carlos', 'García', 'IT', 1),
-        ('María', 'Pérez', 'Marketing', 2)
+        ('Carlos', 'García', 'IT', 1, $centroId, 5.0),
+        ('María', 'Pérez', 'Marketing', 2, $centroId, 10.0)
     ");
 
     // Example employee for our 'worker'
     $pdo->exec("
-        INSERT INTO empleados (nombre, apellido, departamento, tipo_contrato_id)
+        INSERT INTO empleados (nombre, apellido, departamento, tipo_contrato_id, centro_trabajo_id, radio_accion)
         VALUES
-        ('Worker', 'Man', 'Operaciones', 1)
+        ('Worker', 'Man', 'Operaciones', 1, $centroId, 8.0)
     ");
     $lastEmpId = $pdo->lastInsertId();
 
@@ -168,4 +189,5 @@ function insertarDatosEjemplo(PDO $pdo)
         )
     ");
 }
+?>
 

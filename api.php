@@ -26,7 +26,7 @@ $id       = isset($_GET['id']) ? intval($_GET['id']) : null;
 
 // For POST/PUT/DELETE, parse JSON from body
 $inputData = [];
-if (in_array($method, ['POST','PUT','DELETE'])) {
+if (in_array($method, ['POST', 'PUT', 'DELETE'])) {
     $json = file_get_contents("php://input");
     $decoded = json_decode($json, true);
     if (is_array($decoded)) {
@@ -34,18 +34,34 @@ if (in_array($method, ['POST','PUT','DELETE'])) {
     }
 }
 
+// Helper: Haversine formula to calculate distance (in km)
+function haversine_distance($lat1, $lon1, $lat2, $lon2) {
+    $earth_radius = 6371; // Earth radius in km
+
+    $dLat = deg2rad($lat2 - $lat1);
+    $dLon = deg2rad($lon2 - $lon1);
+    $a = sin($dLat/2) * sin($dLat/2) +
+         cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+         sin($dLon/2) * sin($dLon/2);
+    $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+    return $earth_radius * $c;
+}
+
 // 2. Route by endpoint
 switch ($endpoint) {
     case 'menu':
-        // Now admin can see "Empleados" plus these others
         echo json_encode([
-            ["etiqueta" => "Empleados"],
-            ["etiqueta" => "Asistencia"],
-            ["etiqueta" => "Vacaciones"],
-            ["etiqueta" => "Contratos"],
-            ["etiqueta" => "Incidencias"]
-            // Could also add "Usuarios" if you want a separate CRUD
+            ["etiqueta" => "Empleados",      "endpoint" => "Empleados"],
+            ["etiqueta" => "Asistencia",      "endpoint" => "Asistencia"],
+            ["etiqueta" => "Vacaciones",      "endpoint" => "Vacaciones"],
+            ["etiqueta" => "Contratos",       "endpoint" => "Contratos"],
+            ["etiqueta" => "Incidencias",     "endpoint" => "Incidencias"],
+            ["etiqueta" => "Centros de Trabajo", "endpoint" => "CentrosTrabajo"]
         ]);
+        break;
+
+    case 'CentrosTrabajo': // New endpoint for centros de trabajo
+        crudGenerico($pdo, 'centros_trabajo', $method, $id, $inputData);
         break;
 
     case 'Empleados':
@@ -72,13 +88,19 @@ exit;
 
 /** -----------------------------------------
  *  handleEmpleados
- *  - Enhanced to also store/edit user info
+ *  - Enhanced to also store/edit user info and include centro de trabajo and radio de acción
  * -----------------------------------------
  */
 function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
     switch ($method) {
         case 'GET':
-            // Build metadata with user fields included
+            // Prepare options for centro de trabajo (for select)
+            $stmtCentro = $pdo->query("SELECT id, name FROM centros_trabajo");
+            $optionsCentros = [];
+            while ($ct = $stmtCentro->fetch(PDO::FETCH_ASSOC)) {
+                $optionsCentros[] = [ "value" => $ct['id'], "label" => $ct['name'] ];
+            }
+
             $stmt = $pdo->query("SELECT id, name FROM tipos_contrato");
             $tipos = $stmt->fetchAll(PDO::FETCH_ASSOC);
             $optionsTipo = [];
@@ -86,7 +108,6 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 $optionsTipo[] = [ "value" => $t['id'], "label" => $t['name'] ];
             }
 
-            // For 'rol' we can do a small set
             $optionsRol = [
                 ["value" => "admin",  "label" => "Admin"],
                 ["value" => "worker", "label" => "Trabajador"]
@@ -94,19 +115,27 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
 
             $meta = [
                 "fields" => [
-                    [ "name" => "id",               "label" => "ID",              "type" => "number", "readonly" => true ],
-                    [ "name" => "nombre",           "label" => "Nombre",          "type" => "text" ],
-                    [ "name" => "apellido",         "label" => "Apellido",        "type" => "text" ],
-                    [ "name" => "departamento",     "label" => "Departamento",    "type" => "text" ],
+                    [ "name" => "id",               "label" => "ID",            "type" => "number", "readonly" => true ],
+                    [ "name" => "nombre",           "label" => "Nombre",        "type" => "text" ],
+                    [ "name" => "apellido",         "label" => "Apellido",      "type" => "text" ],
+                    [ "name" => "departamento",     "label" => "Departamento",  "type" => "text" ],
                     [
                         "name" => "tipo_contrato_id",
                         "label" => "Tipo Contrato",
                         "type" => "select",
                         "options" => $optionsTipo
                     ],
-                    // New fields to manage the user account
-                    [ "name" => "username",   "label" => "Usuario",     "type" => "text" ],
-                    [ "name" => "password",   "label" => "Contraseña",  "type" => "text" ],
+                    // New fields for centro de trabajo and radio de acción:
+                    [
+                        "name" => "centro_trabajo_id",
+                        "label" => "Centro de Trabajo",
+                        "type" => "select",
+                        "options" => $optionsCentros
+                    ],
+                    [ "name" => "radio_accion",     "label" => "Radio de acción (km)", "type" => "number" ],
+                    // User account fields:
+                    [ "name" => "username",         "label" => "Usuario",       "type" => "text" ],
+                    [ "name" => "password",         "label" => "Contraseña",    "type" => "text" ],
                     [
                         "name" => "rol",
                         "label" => "Rol",
@@ -116,14 +145,17 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 ]
             ];
 
-            // Data
             if ($id) {
                 $sql = "
                     SELECT e.id, e.nombre, e.apellido, e.departamento, e.tipo_contrato_id,
                            tc.name AS tipo_contrato_desc,
+                           e.centro_trabajo_id,
+                           ct.name AS centro_trabajo_desc,
+                           e.radio_accion,
                            u.username, u.password, u.rol
                     FROM empleados e
                     LEFT JOIN tipos_contrato tc ON e.tipo_contrato_id = tc.id
+                    LEFT JOIN centros_trabajo ct ON e.centro_trabajo_id = ct.id
                     LEFT JOIN usuarios u ON u.empleado_id = e.id
                     WHERE e.id = :id
                 ";
@@ -135,9 +167,13 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 $sql = "
                     SELECT e.id, e.nombre, e.apellido, e.departamento, e.tipo_contrato_id,
                            tc.name AS tipo_contrato_desc,
+                           e.centro_trabajo_id,
+                           ct.name AS centro_trabajo_desc,
+                           e.radio_accion,
                            u.username, u.password, u.rol
                     FROM empleados e
                     LEFT JOIN tipos_contrato tc ON e.tipo_contrato_id = tc.id
+                    LEFT JOIN centros_trabajo ct ON e.centro_trabajo_id = ct.id
                     LEFT JOIN usuarios u ON u.empleado_id = e.id
                 ";
                 $stmt = $pdo->query($sql);
@@ -151,17 +187,13 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 echo json_encode(["error" => "No data received for insert"]);
                 return;
             }
-            // Extract user fields so we don't try to put them into empleados
-            $userFields = ['username','password','rol'];
+            $userFields = ['username', 'password', 'rol'];
             $username = $inputData['username'] ?? '';
             $password = $inputData['password'] ?? '';
             $rol      = $inputData['rol']      ?? '';
-            // remove them from $inputData
             foreach ($userFields as $uf) {
                 unset($inputData[$uf]);
             }
-
-            // Insert into empleados
             $columns = array_keys($inputData);
             $placeholders = array_map(fn($c) => ':' . $c, $columns);
             $sql = "INSERT INTO empleados (" . implode(",", $columns) . ") VALUES (" . implode(",", $placeholders) . ")";
@@ -169,10 +201,7 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($inputData);
                 $newId = $pdo->lastInsertId();
-
-                // If username is not empty => create user row
                 if (!empty($username)) {
-                    // Just store password as-is; in real life, we'd hash it
                     $sqlU = "INSERT INTO usuarios (username, password, rol, empleado_id)
                              VALUES (:u, :p, :r, :eid)";
                     $stU = $pdo->prepare($sqlU);
@@ -180,10 +209,9 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                         ':u' => $username,
                         ':p' => $password,
                         ':r' => $rol ?: 'worker',
-                        ':eid'=> $newId
+                        ':eid' => $newId
                     ]);
                 }
-
                 echo json_encode(["success" => true, "id" => $newId]);
             } catch (PDOException $e) {
                 echo json_encode(["error" => $e->getMessage()]);
@@ -199,17 +227,13 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 echo json_encode(["error" => "No data for update"]);
                 return;
             }
-
-            // Extract user fields
-            $userFields = ['username','password','rol'];
+            $userFields = ['username', 'password', 'rol'];
             $username = $inputData['username'] ?? '';
-            $password = $inputData['password'] ?? null; // might be empty string
+            $password = $inputData['password'] ?? null;
             $rol      = $inputData['rol']      ?? '';
             foreach ($userFields as $uf) {
                 unset($inputData[$uf]);
             }
-
-            // Update empleados
             $sets = [];
             foreach ($inputData as $col => $val) {
                 $sets[] = "$col = :$col";
@@ -219,25 +243,15 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 $stmt = $pdo->prepare($sql);
                 $inputData['id'] = $id;
                 $stmt->execute($inputData);
-
-                // Now handle the user row
-                //  - If username is empty => delete user row (if any)
-                //  - Otherwise => create or update it
-
-                // Find existing user row
                 $stChk = $pdo->prepare("SELECT id,password FROM usuarios WHERE empleado_id = :eid LIMIT 1");
                 $stChk->execute([':eid' => $id]);
                 $userRow = $stChk->fetch(PDO::FETCH_ASSOC);
-
                 if (empty($username)) {
-                    // Remove user row if it exists
                     if ($userRow) {
-                        $pdo->prepare("DELETE FROM usuarios WHERE id = :uid")->execute([':uid'=>$userRow['id']]);
+                        $pdo->prepare("DELETE FROM usuarios WHERE id = :uid")->execute([':uid' => $userRow['id']]);
                     }
                 } else {
-                    // We want a user row
                     if (!$userRow) {
-                        // Insert new user
                         $sqlU = "INSERT INTO usuarios (username, password, rol, empleado_id)
                                  VALUES (:u, :p, :r, :eid)";
                         $stU = $pdo->prepare($sqlU);
@@ -245,28 +259,25 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                             ':u' => $username,
                             ':p' => $password ?? '',
                             ':r' => $rol ?: 'worker',
-                            ':eid'=> $id
+                            ':eid' => $id
                         ]);
                     } else {
-                        // Update existing
-                        // If password is empty string => keep old password
                         $newPassword = $userRow['password'];
                         if ($password !== null && $password !== '') {
                             $newPassword = $password;
                         }
                         $sqlU = "UPDATE usuarios
-                                 SET username=:u, password=:p, rol=:r
-                                 WHERE id=:uid";
+                                 SET username = :u, password = :p, rol = :r
+                                 WHERE id = :uid";
                         $stU = $pdo->prepare($sqlU);
                         $stU->execute([
                             ':u' => $username,
                             ':p' => $newPassword,
                             ':r' => $rol ?: 'worker',
-                            ':uid'=> $userRow['id']
+                            ':uid' => $userRow['id']
                         ]);
                     }
                 }
-
                 echo json_encode(["success" => true, "id" => $id]);
             } catch (PDOException $e) {
                 echo json_encode(["error" => $e->getMessage()]);
@@ -279,10 +290,7 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
                 return;
             }
             try {
-                // Also remove user row referencing this employee, if any
-                $pdo->prepare("DELETE FROM usuarios WHERE empleado_id = :eid")->execute([':eid'=>$id]);
-
-                // Then remove employee
+                $pdo->prepare("DELETE FROM usuarios WHERE empleado_id = :eid")->execute([':eid' => $id]);
                 $stmt = $pdo->prepare("DELETE FROM empleados WHERE id = :id");
                 $stmt->execute(['id' => $id]);
                 echo json_encode(["success" => true, "id" => $id]);
@@ -297,46 +305,55 @@ function handleEmpleados(PDO $pdo, $method, $id, $inputData) {
     }
 }
 
-/**
- * handleLogTime
- * 
- * Endpoint to be called by workers on index.php for clocking in/out with geolocation.
+/** -----------------------------------------
+ *  handleLogTime
+ *  - Endpoint for clocking in/out with geolocation and calculating distance to assigned centro de trabajo
+ * -----------------------------------------
  */
 function handleLogTime(PDO $pdo, $method, $inputData) {
     if ($method !== 'POST') {
         echo json_encode(["error" => "Method not allowed, use POST"]);
         return;
     }
-
-    // Must be logged in with role=worker
     if (empty($_SESSION['user_id']) || ($_SESSION['user_rol'] ?? '') !== 'worker') {
         echo json_encode(["error" => "No active worker session"]);
         return;
     }
-
     $action = $inputData['action'] ?? null;
     $lat = $inputData['latitude'] ?? null;
     $lon = $inputData['longitude'] ?? null;
-
     if (!$action || !$lat || !$lon) {
         echo json_encode(["error" => "Missing action or lat/lon"]);
         return;
     }
-
-    // We need empleado_id from session
     $empId = $_SESSION['empleado_id'] ?? null;
     if (!$empId) {
         echo json_encode(["error" => "No empleado_id linked to user"]);
         return;
     }
+    
+    // Retrieve the centro de trabajo assigned to this employee, including its coordinates and the employee's radio_accion
+    $sqlCentro = "
+        SELECT ct.latitude, ct.longitude, e.radio_accion 
+        FROM empleados e 
+        LEFT JOIN centros_trabajo ct ON e.centro_trabajo_id = ct.id 
+        WHERE e.id = :empId
+    ";
+    $stCentro = $pdo->prepare($sqlCentro);
+    $stCentro->execute([':empId' => $empId]);
+    $centro = $stCentro->fetch(PDO::FETCH_ASSOC);
+    if (!$centro || empty($centro['latitude']) || empty($centro['longitude'])) {
+        echo json_encode(["error" => "No centro de trabajo assigned or incomplete data"]);
+        return;
+    }
+    
+    // Calculate the distance (in km) using the Haversine formula
+    $distance = haversine_distance($lat, $lon, $centro['latitude'], $centro['longitude']);
 
-    // We'll store current date/time
     $fechaHoy = date('Y-m-d');
     $horaAhora = date('H:i');
-
     try {
         if ($action === 'entrance') {
-            // Insert a new record in Asistencia
             $sql = "INSERT INTO Asistencia (
                         empleado_id, fecha, hora_entrada, lat_entrada, lon_entrada
                     ) VALUES (:emp, :fecha, :hentrada, :latE, :lonE)";
@@ -348,10 +365,11 @@ function handleLogTime(PDO $pdo, $method, $inputData) {
                 ':latE'    => $lat,
                 ':lonE'    => $lon
             ]);
-            echo json_encode(["success" => true, "message" => "Entrada registrada"]);
-        }
-        elseif ($action === 'exit') {
-            // Find the last "Asistencia" record for this employee that does not have a hora_salida yet
+            echo json_encode([
+                "success" => true,
+                "message" => "Entrada registrada. Distancia al centro: " . round($distance, 2) . " km"
+            ]);
+        } elseif ($action === 'exit') {
             $sqlFind = "
                 SELECT id
                 FROM Asistencia
@@ -367,12 +385,10 @@ function handleLogTime(PDO $pdo, $method, $inputData) {
                 ':fecha' => $fechaHoy
             ]);
             $row = $st->fetch(PDO::FETCH_ASSOC);
-
             if (!$row) {
                 echo json_encode(["error" => "No hay registro de entrada para hoy"]);
                 return;
             }
-
             $idAsistencia = $row['id'];
             $sqlUpdate = "
                 UPDATE Asistencia
@@ -388,9 +404,11 @@ function handleLogTime(PDO $pdo, $method, $inputData) {
                 ':lonS'    => $lon,
                 ':id'      => $idAsistencia
             ]);
-            echo json_encode(["success" => true, "message" => "Salida registrada"]);
-        }
-        else {
+            echo json_encode([
+                "success" => true,
+                "message" => "Salida registrada. Distancia al centro: " . round($distance, 2) . " km"
+            ]);
+        } else {
             echo json_encode(["error" => "Acción no reconocida"]);
         }
     } catch (PDOException $e) {
@@ -413,6 +431,18 @@ function crudGenerico(PDO $pdo, $tabla, $method, $id, $inputData) {
                 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
             } else {
                 $data = $pdo->query("SELECT * FROM $tablaReal")->fetchAll(PDO::FETCH_ASSOC);
+            }
+            
+            // For Asistencia endpoint, generate Google Maps links on the backend
+            if ($tablaReal == 'Asistencia') {
+                foreach ($data as &$row) {
+                    $row['mapa_entrada'] = (!empty($row['lat_entrada']) && !empty($row['lon_entrada']))
+                        ? "<a href='https://www.google.com/maps/search/?api=1&query=" . $row['lat_entrada'] . "," . $row['lon_entrada']."' target='_blank'>Mapa</a>"
+                        : "";
+                    $row['mapa_salida'] = (!empty($row['lat_salida']) && !empty($row['lon_salida']))
+                        ? "<a href='https://www.google.com/maps/search/?api=1&query=" . $row['lat_salida'] . "," . $row['lon_salida']."' target='_blank'>Mapa</a>"
+                        : "";
+                }
             }
             
             // Retrieve table structure using PRAGMA table_info
@@ -457,7 +487,7 @@ function crudGenerico(PDO $pdo, $tabla, $method, $id, $inputData) {
                     }
                 }
                 // For foreign key columns
-                if (in_array($tablaReal, ['Asistencia','Vacaciones','Contratos','Incidencias']) && $col['name'] == 'empleado_id') {
+                if (in_array($tablaReal, ['Asistencia', 'Vacaciones', 'Contratos', 'Incidencias']) && $col['name'] == 'empleado_id') {
                     $fieldType = "select";
                     $stmtEmp = $pdo->query("SELECT id, nombre || ' ' || apellido as display FROM empleados");
                     $employees = $stmtEmp->fetchAll(PDO::FETCH_ASSOC);
@@ -466,7 +496,6 @@ function crudGenerico(PDO $pdo, $tabla, $method, $id, $inputData) {
                         $options[] = ["value" => $emp['id'], "label" => $emp['display']];
                     }
                 }
-
                 $field = [
                     "name" => $col['name'],
                     "label" => ucfirst($col['name']),
@@ -541,4 +570,5 @@ function crudGenerico(PDO $pdo, $tabla, $method, $id, $inputData) {
             break;
     }
 }
+?>
 
