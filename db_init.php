@@ -10,7 +10,7 @@
 
 function getPDOConnection(): PDO
 {
-    $dbFile = __DIR__ . '../databases/darksalmon.db';
+    $dbFile = '../databases/darksalmon.db';
     $dbExisted = file_exists($dbFile);
 
     try {
