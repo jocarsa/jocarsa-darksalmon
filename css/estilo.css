@@ -1,0 +1,228 @@
+/* Basic reset & layout */
+*{
+  font-family: Ubuntu, sans-serif;
+}
+html, body {
+  margin: 0; 
+  padding: 0;
+  height: 100%;
+  font-family: Ubuntu, sans-serif;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: DarkSalmon;
+  font-size: 1em;
+  background: linear-gradient(0deg, rgba(124,80,65,1) 0%, rgba(233,150,122,1) 100%);
+}
+header, footer {
+  color: white;
+  flex: 0 0 auto;
+}
+main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+header {
+  display: flex; 
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+}
+header h1 {
+  margin: 0; 
+  padding: 10px 0;
+  font-size: 20px;
+  display: flex; 
+  align-items: center;
+  margin-left: 3px;
+}
+header h1 img {
+  width: 45px;
+  margin-right: 16px;
+}
+/* The "relieve" style effect */
+.relieve {
+  background-color: rgba(0,0,0,0.3);
+  box-shadow: 0 4px 0 rgba(255,255,255,0.7),
+              0 6px 6px rgba(0,0,0,0.2);
+  position: relative;
+  transition: all 0.2s ease;
+  border: none;
+}
+.relieve:active {
+  box-shadow: 0 0 0 #357ab7,
+              0 2px 4px rgba(0,0,0,0.2);
+}
+/* Left nav menu */
+main nav {
+  color: white;
+  width: 200px;
+  display: flex; 
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  transition: all 0.5s ease;
+  margin-left: 10px;
+}
+main nav .enlaces {
+  display: flex;
+  flex-direction: column;
+}
+main nav .enlaces div {
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width:200px;
+}
+main nav .enlaces div:hover {
+  background: rgba(255,255,255,0.2);
+}
+main nav .activo {
+  background: white;
+  color: DarkSlateGray;
+  border-radius: 10px 0 0 10px;
+  position: relative;
+  z-index: 100;
+}
+.icono {
+  display: inline-block;
+  width: 30px; 
+  height: 30px;
+  line-height: 30px;
+  background: white;
+  color: DarkSalmon;
+  text-align: center;
+  border-radius: 20px;
+  margin-right: 15px;
+  border-bottom:1px solid Darksalmon;
+}
+.activo .icono {
+  background: DarkSalmon;
+  color:white;
+}
+#ocultar {
+  padding: 10px;
+  cursor: pointer;
+  width:200px;
+}
+#ocultar .icono {
+  transition: all 0.5s ease;
+  transform: rotate(180deg);
+}
+/* Section (right content area) */
+section {
+  flex: 1; 
+  background: white;
+  border-radius: 10px 0 0 10px;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+  padding: 20px;
+  position: relative;
+  z-index:10000;
+}
+section h3 {
+  margin-top: 0;
+}
+/* Table styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+table thead {
+  background: DarkSalmon;
+  color: white;
+}
+table thead tr{
+  border-radius:5px;
+}
+table th, table td {
+  padding: 10px;
+}
+table th:first-child{
+  border-radius:5px 0px 0px 5px;
+}
+table th:last-child{
+  border-radius:0px 5px 5px 0px;
+}
+table tbody tr:hover {
+  background: #f9f9f9;
+}
+/* Buttons for actions */
+.btn {
+  padding: 0px 0px;
+  margin: 0px 5px;
+  cursor: pointer;
+  border-radius: 5px;
+  border: none;
+  width: 26px;
+  height: 24px;
+  text-align: center;
+  font-size: 20px;
+  line-height: 21px;
+}
+.actualizar {
+  background: darksalmon; 
+  color: black;
+}
+.eliminar {
+  background: darksalmon; 
+  color: white;
+}
+/* Form for insert/edit */
+#formulario {
+  display: none; 
+}
+#formulario h4 {
+  margin-top: 0;
+}
+#formulario label {
+  display: block; 
+  margin-top: 5px;
+}
+#formulario input[type=text],
+#formulario input[type=number],
+#formulario select,
+#formulario input[type=date],
+#formulario input[type=time] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-sizing:border-box;
+  border:1px solid lightgray;
+}
+#formulario .btn {
+  margin-top: 5px;
+}
+/* Footer */
+footer {
+  text-align: center;
+  padding: 10px;
+  color: white;
+}
+#btn-nuevo{
+  width:45px;
+  height:45px;
+  border-radius:40px;
+  font-size:40px;
+  line-height:33px;
+  position:absolute;
+  bottom:10px;
+  right:10px;
+  font-weight:bold;
+  text-align:center;
+  background:darksalmon;
+  color:white;
+  border:2px solid white;
+}
+#titulo-tabla{
+  display:none;
+}
+.emoji{
+  filter:brightness(10);
+}
+
